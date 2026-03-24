@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>水质监测管理系统</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  {% block head %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{{ url_for('static', filename='input.js') }}"></script>
+  {% endblock %}
+  <style>
+    :root {
+      --primary: #165DFF;
+      --success: #52C41A;
+      --warning: #FAAD14;
+      --danger: #FF4D4F;
+      --bg-page: #F9FAFB;
+      --bg-card: #FFFFFF;
+      --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+      --radius-card: 8px;
+      --radius-btn: 6px;
+      --radius-input: 6px;
+      --font-title: 18px;
+      --font-body: 14px;
+      --font-table: 13px;
+      --font-weight-title: 600;
+      --row-zebra: #F9FAFB;
+      --row-hover: #E8F3FF;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: var(--font-body);
+      background: var(--bg-page);
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* body 为 flex 时，子级需占满宽度，否则主区域会缩成「只有内容那么宽」，右侧大片留白 */
+    #app {
+      flex: 1 1 auto;
+      display: flex;
+      width: 100%;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    /* ========== 左侧导航栏 ========== */
+    .sidebar {
+      width: 220px;
+      min-height: 100vh;
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-logo {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      font-size: 16px;
+      font-weight: var(--font-weight-title);
+      color: var(--primary);
+    }
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 0;
+    }
+    .nav-item {
+      display: block;
+      padding: 12px 20px;
+      color: #333;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-item:hover { background: var(--row-hover); color: var(--primary); }
+    .nav-item.active { background: rgba(22,93,255,0.1); color: var(--primary); font-weight: 500; }
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+      color: #999;
+    }
+    .sidebar-footer .version { margin-bottom: 8px; }
+    .btn-logout-sidebar {
+      width: 100%;
+      padding: 8px 16px;
+      border: 1px solid var(--danger);
+      background: transparent;
+      color: var(--danger);
+      border-radius: var(--radius-btn);
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .btn-logout-sidebar:hover { background: rgba(255,77,79,0.08); }
+
+    /* ========== 主内容区 ========== */
+    .main-wrapper {
+      flex: 1 1 0%;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      width: 0; /* 与 flex:1 配合，强制吃掉侧栏右侧全部剩余宽度 */
+    }
+
+    /* ========== 顶部操作栏 ========== */
+    /* 第一行只有：导航标签（从左缘铺满到用户区左侧）+ 用户区；面包屑在下一行，不占标签宽度 */
+    .topbar {
+      width: 100%;
+      min-height: 52px;
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 24px;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+    .breadcrumb-bar {
+      width: 100%;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      padding: 8px 24px 10px;
+      background: var(--bg-page);
+      border-bottom: 1px solid #eee;
+    }
+    .breadcrumb {
+      font-size: 13px;
+      color: #666;
+    }
+    .breadcrumb span { color: var(--primary); }
+    .top-tabs {
+      flex: 1 1 0%;
+      min-width: 0;
+      width: 0; /* 关键：让 nav 在 flex 行里真正拉满中间区域 */
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .top-tabs a {
+      flex: 1 1 0%;
+      min-width: 0;
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+      text-decoration: none;
+      padding: 8px 6px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .top-tabs a:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+      background: rgba(22,93,255,0.06);
+    }
+    .topbar-right {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #666;
+    }
+    .btn-icon:hover { background: var(--row-hover); color: var(--primary); }
+    .btn-logout { padding: 6px 16px; border: 1px solid var(--danger); background: transparent; color: var(--danger); border-radius: var(--radius-btn); cursor: pointer; font-size: 14px; }
+    .btn-logout:hover { background: rgba(255,77,79,0.08); }
+
+    /* ========== 中央内容区 ========== */
+    .content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ========== 卡片 ========== */
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    /* 数据录入：窄卡片居中、纵向拉长（单列、行距加大） */
+    .card.card--entry {
+      max-width: 560px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 32px 36px 40px;
+      box-sizing: border-box;
+    }
+    #pageEntry .form-row {
+      flex-direction: column;
+      gap: 20px;
+      margin-bottom: 4px;
+    }
+    #pageEntry .form-group {
+      flex: none;
+      width: 100%;
+      min-width: 0;
+    }
+    #pageEntry .card-title {
+      margin-bottom: 10px;
+    }
+    #pageEntry .card-desc {
+      margin-bottom: 28px;
+    }
+    #pageEntry .form-actions {
+      margin-top: 32px;
+      padding-top: 4px;
+    }
+    #pageEntry input[type="text"],
+    #pageEntry input[type="number"],
+    #pageEntry input[type="date"] {
+      padding: 12px 14px;
+    }
+
+    /* 数据修改 / 删除 / 查询 / 告警：与录入页同宽居中，筛选区纵向拉长 */
+    .page-layout-narrow {
+      max-width: 560px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      box-sizing: border-box;
+    }
+    /* 数据修改、数据查询：略宽，表格与条件更易阅读 */
+    .page-layout-narrow.page-layout--wider {
+      max-width: 800px;
+    }
+    /* 数据修改：窄宽度卡片，水平居中 */
+    #pageEdit.page-layout-narrow.page-layout--wider {
+      max-width: 800px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      box-sizing: border-box;
+    }
+    .page-layout-narrow .query-section {
+      padding: 22px 24px 26px;
+    }
+    .page-layout-narrow .card {
+      padding: 28px 24px 32px;
+    }
+    .page-layout-narrow .query-section > .form-row,
+    .page-layout-narrow .query-body > .form-row:not(.form-row--buttons):not(#queryIndicators) {
+      flex-direction: column;
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+    .page-layout-narrow .query-section .form-group,
+    .page-layout-narrow .query-body > .form-row:not(.form-row--buttons):not(#queryIndicators) .form-group {
+      flex: none !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+    .page-layout-narrow .form-group--action .btn {
+      width: 100%;
+    }
+    .page-layout-narrow .form-group--action {
+      margin-top: 4px;
+    }
+    .page-layout-narrow #queryIndicators {
+      flex-direction: column;
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+    .page-layout-narrow #queryIndicators .form-group {
+      width: 100% !important;
+      max-width: none !important;
+    }
+    .page-layout-narrow .query-indicator-ops {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .page-layout-narrow .query-indicator-ops .q-op-select {
+      flex: 0 0 72px;
+      width: auto;
+    }
+    .page-layout-narrow .query-indicator-ops .q-val-input {
+      flex: 1;
+      min-width: 0;
+    }
+    .page-layout-narrow .form-row--buttons {
+      flex-direction: row !important;
+      flex-wrap: wrap;
+      gap: 12px !important;
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+    .page-layout-narrow .form-row--buttons .btn {
+      flex: 1;
+      min-width: 120px;
+    }
+    .page-layout-narrow .stats-row {
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .page-layout-narrow .alert-layout {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .page-layout-narrow .table-wrap {
+      overflow-x: auto;
+    }
+    .page-layout-narrow input[type="text"],
+    .page-layout-narrow input[type="number"],
+    .page-layout-narrow input[type="date"],
+    .page-layout-narrow select {
+      padding: 12px 14px;
+    }
+
+    .card-title {
+      font-size: var(--font-title);
+      font-weight: var(--font-weight-title);
+      margin-bottom: 8px;
+    }
+    .card-desc { font-size: 14px; color: #666; margin-bottom: 20px; }
+
+    /* ========== 表单 ========== */
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #333;
+    }
+    .form-group .unit-hint { font-size: 12px; color: #999; margin-left: 4px; }
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d9d9d9;
+      border-radius: var(--radius-input);
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    input.error { border-color: var(--danger); }
+    .error-msg { font-size: 12px; color: var(--danger); margin-top: 4px; }
+    .form-actions { margin-top: 24px; display: flex; gap: 12px; }
+
+    /* ========== 按钮 ========== */
+    .btn {
+      padding: 10px 20px;
+      border-radius: var(--radius-btn);
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+    .btn-default { background: white; color: #333; border: 1px solid #d9d9d9; }
+    .btn-default:hover:not(:disabled) { background: #f5f5f5; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover:not(:disabled) { opacity: 0.9; }
+
+    /* ========== 表格 ========== */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--font-table);
+      font-family: "Consolas", "Monaco", monospace;
+    }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #fafafa; font-weight: 600; color: #333; }
+    tr:nth-child(even) { background: var(--row-zebra); }
+    tr:hover { background: var(--row-hover); }
+    .cell-overlimit { color: var(--danger); font-weight: 500; }
+    .row-unhandled { background: #FFF7E6 !important; }
+    /* 告警列表每行黄色背景 */
+    #pageAlert #alertTableBody tr { background: #FFF7E6 !important; }
+    #pageAlert #alertTableBody tr:hover { background: #FFE8A3 !important; }
+    .row-handled { background: #F6FFED !important; }
+
+    /* ========== 分页 ========== */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .pagination button {
+      padding: 6px 12px;
+      border: 1px solid #d9d9d9;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .pagination button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+    .pagination button:disabled { cursor: not-allowed; opacity: 0.5; }
+    .pagination .page-info { font-size: 14px; color: #666; margin: 0 8px; }
+
+    /* ========== 模态框 ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: white;
+      border-radius: var(--radius-card);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      max-width: 560px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #eee;
+      font-size: var(--font-title);
+      font-weight: var(--font-weight-title);
+    }
+    .modal-body { padding: 24px; }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    /* ========== 查询条件区 ========== */
+    .query-section {
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .query-section.collapsible .query-header { cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+    .query-section.collapsible .query-body.collapsed { display: none; }
+
+    /* ========== 统计卡片 ========== */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 20px;
+    }
+    .stat-card .label { font-size: 14px; color: #666; margin-bottom: 8px; }
+    .stat-card .value { font-size: 24px; font-weight: 600; color: var(--primary); }
+
+    /* ========== 告警页布局 ========== */
+    .alert-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+    }
+    @media (max-width: 960px) { .alert-layout { grid-template-columns: 1fr; } }
+    .threshold-panel {
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 20px;
+      height: fit-content;
+    }
+    .threshold-panel.collapsed .threshold-body { display: none; }
+    .threshold-panel .panel-header { cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+    /* ========== Toast 提示 ========== */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 12px 20px;
+      border-radius: var(--radius-btn);
+      background: #333;
+      color: white;
+      font-size: 14px;
+      box-shadow: var(--shadow-card);
+      animation: toastIn 0.3s ease;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    .toast.warning { background: var(--warning); }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+  </style>
+</head>
+<body>
+  <!-- 主应用（登录请使用 /login 路由渲染的 login.html） -->
+  <div id="app">
+    <aside class="sidebar">
+      <div class="sidebar-logo">水质监测管理系统</div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" data-page="entry" href="{{ url_for('entry_page') }}">数据录入</a>
+        <a class="nav-item" data-page="edit" href="{{ url_for('edit_page') }}">数据修改</a>
+        <a class="nav-item" data-page="delete" href="{{ url_for('delete_page') }}">数据删除</a>
+        <a class="nav-item" data-page="query" href="{{ url_for('query_page') }}">数据查询</a>
+        <a class="nav-item" data-page="alert" href="{{ url_for('alert_page') }}">超标告警</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="version">v1.0.0</div>
+        <button class="btn-logout-sidebar" id="sidebarLogout">退出</button>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <nav class="top-tabs" aria-label="功能导航">
+          <a href="{{ url_for('entry_page') }}">数据录入</a>
+          <a href="{{ url_for('edit_page') }}">数据修改</a>
+          <a href="{{ url_for('delete_page') }}">数据删除</a>
+          <a href="{{ url_for('query_page') }}">数据查询</a>
+          <a href="{{ url_for('alert_page') }}">超标告警</a>
+        </nav>
+        <div class="topbar-right">
+          <div class="user-info">
+            <div class="user-avatar" id="userAvatar">{{ (user.username[:1] if user and user.username else 'U')|upper }}</div>
+            <span id="userName">{{ user.username if user else '用户' }}</span>
+          </div>
+          <button class="btn-icon" title="消息">🔔</button>
+          <button class="btn-logout" id="topbarLogout">退出登录</button>
+        </div>
+      </header>
+      <div class="breadcrumb-bar">
+        <div class="breadcrumb" id="breadcrumb">首页 → 数据录入</div>
+      </div>
+
+      <main class="content">
+        {% block page_content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- 编辑模态框 -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">编辑监测数据</div>
+      <div class="modal-body">
+        <form id="editForm" action="/edit" method="post">
+          <input type="hidden" id="editId" name="id" />
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>监测点编号</label>
+            <input type="text" id="editPoint" name="point_id" readonly style="background:#f5f5f5;" />
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>监测日期</label>
+            <input type="text" id="editDate" name="date" readonly style="background:#f5f5f5;" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>余氯 (mg/L)</label>
+              <input type="number" id="editFCR" name="FCR" step="0.01" />
+              <div class="error-msg" id="errEditFCR"></div>
+            </div>
+            <div class="form-group">
+              <label>电导率 (μS/cm)</label>
+              <input type="number" id="editECR" name="ECR" step="0.01" />
+              <div class="error-msg" id="errEditECR"></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>PH 值</label>
+              <input type="number" id="editPH" name="PH" step="0.01" />
+              <div class="error-msg" id="errEditPH"></div>
+            </div>
+            <div class="form-group">
+              <label>ORP (mV)</label>
+              <input type="number" id="editORP" name="ORP" step="0.01" />
+              <div class="error-msg" id="errEditORP"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>浊度 (NTU)</label>
+            <input type="number" id="editNTU" name="NTU" step="0.01" />
+            <div class="error-msg" id="errEditNTU"></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="editModalCancel">取消</button>
+        <button class="btn btn-primary" id="editModalSave" type="submit" form="editForm" formtarget="_top">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 退出确认模态框 -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">确认退出</div>
+      <div class="modal-body">确定要退出登录吗？</div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="logoutCancel">取消</button>
+        <button class="btn btn-danger" id="logoutOk">确认退出</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  {# 使用 textarea 存 JSON，避免 IDE 把 script/json 里的 Jinja 当成语法错误 #}
+  <textarea id="wq-bootstrap" hidden readonly>{{ {'logoutUrl': url_for('logout'), 'currentPage': current_page|default('entry'), 'serverData': quality_rows}|tojson }}</textarea>
+  <script src="{{ url_for('static', filename='water_quality.js') }}"></script>
+  {% block extra_page_js %}{% endblock %}
+  <script>
+    initCurrentPage();
+  </script>
+</body>
+</html>

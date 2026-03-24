@@ -1,0 +1,62 @@
+{% extends "water_quality.html" %}
+
+{% block page_content %}
+<!-- 页面2：数据修改（窄版纵向筛选 + 整体靠左上） -->
+<div id="pageEdit" class="page active page-layout-narrow page-layout--wider">
+  <div class="query-section">
+    <div class="form-row">
+      <div class="form-group">
+        <label>监测点编号</label>
+        <input type="text" id="editQueryPoint" placeholder="可选" />
+      </div>
+      <div class="form-group">
+        <label>开始日期</label>
+        <input type="date" id="editQueryStart" />
+      </div>
+      <div class="form-group">
+        <label>结束日期</label>
+        <input type="date" id="editQueryEnd" />
+      </div>
+      <div class="form-group form-group--action">
+        <button type="button" class="btn btn-primary" id="editQueryBtn">查询</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>监测点编号</th>
+            <th>日期</th>
+            <th>余氯</th>
+            <th>电导率</th>
+            <th>PH</th>
+            <th>ORP</th>
+            <th>浊度</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for data in quality_data %}
+        <tr>
+          <td>{{ data.point_id }}</td>
+          <td>{{ data.date.date }}</td>
+          <td>{{ data.FCR }}</td>
+          <td>{{ data.ECR }}</td>
+          <td>{{ data.PH }}</td>
+          <td>{{ data.ORP }}</td>
+          <td>{{ data.NTU }}</td>
+          <td>
+            <button class="btn btn-default" style="padding:4px 12px;font-size:12px;" data-edit-id="{{ data.id }}">编辑</button>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        <tbody id="editTableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="editPagination"></div>
+  </div>
+</div>
+{% endblock %}

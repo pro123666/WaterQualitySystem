@@ -1,0 +1,81 @@
+{% extends "water_quality.html" %}
+
+{% block page_content %}
+<!-- 页面3：数据删除 -->
+<div id="pageDelete" class="page active">
+  <div class="query-section">
+    <div class="form-row">
+      <div class="form-group" style="flex: 0 0 200px;">
+        <label>监测点编号</label>
+        <input type="text" id="deleteQueryPoint" placeholder="可选" />
+      </div>
+      <div class="form-group" style="flex: 0 0 150px;">
+        <label>开始日期</label>
+        <input type="date" id="deleteQueryStart" />
+      </div>
+      <div class="form-group" style="flex: 0 0 150px;">
+        <label>结束日期</label>
+        <input type="date" id="deleteQueryEnd" />
+      </div>
+      <div class="form-group" style="flex: 0 0 auto; align-self: flex-end;">
+        <button class="btn btn-primary" id="deleteQueryBtn">查询</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="deleteSelectAll" title="全选" /></th>
+            <th>监测点编号</th>
+            <th>日期</th>
+            <th>余氯</th>
+            <th>电导率</th>
+            <th>PH</th>
+            <th>ORP</th>
+            <th>浊度</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for data in quality_data %}
+        <tr>
+          <td>{{ data.point_id }}</td>
+          <td>{{ data.date.date }}</td>
+          <td>{{ data.FCR }}</td>
+          <td>{{ data.ECR }}</td>
+          <td>{{ data.PH }}</td>
+          <td>{{ data.ORP }}</td>
+          <td>{{ data.NTU }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+        <tbody id="deleteTableBody"></tbody>
+      </table>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+      <div class="pagination" id="deletePagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认模态框（只在删除页出现） -->
+<div class="modal-overlay" id="deleteConfirmModal">
+  <div class="modal" style="max-width: 400px;">
+    <div class="modal-header">确认删除</div>
+    <div class="modal-body">
+      是否删除该条监测数据？此操作不可恢复。
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" id="deleteConfirmCancel">取消</button>
+      <button class="btn btn-danger" id="deleteConfirmOk">确认删除</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_page_js %}
+  <script src="{{ url_for('static', filename='delete_page.js') }}"></script>
+{% endblock %}

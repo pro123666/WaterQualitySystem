@@ -1,0 +1,61 @@
+{% extends "water_quality.html" %}
+
+{% block page_content %}
+<!-- 页面1：数据录入 -->
+<div id="pageEntry" class="page active">
+  <div class="card card--entry">
+    <h2 class="card-title">录入水质监测数据</h2>
+    <p class="card-desc">请填写监测点及5项水质指标</p>
+    <form id="entryForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label>监测点编号 <span class="unit-hint">必填，数字/字母组合</span></label>
+          <input type="text" id="entryPoint" placeholder="如 ST-001" />
+          <div class="error-msg" id="errEntryPoint"></div>
+        </div>
+        <div class="form-group">
+          <label>监测日期 <span class="unit-hint">必填，YYYY-MM-DD</span></label>
+          <input type="date" id="entryDate" />
+          <div class="error-msg" id="errEntryDate"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>余氯 (mg/L) <span class="unit-hint">0.00~5.00</span></label>
+          <input type="number" id="entryFCR" step="0.01" placeholder="0.00" />
+          <div class="error-msg" id="errEntryFCR"></div>
+        </div>
+        <div class="form-group">
+          <label>电导率 (μS/cm) <span class="unit-hint">0~2000</span></label>
+          <input type="number" id="entryECR" step="0.01" placeholder="0" />
+          <div class="error-msg" id="errEntryECR"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>PH 值 <span class="unit-hint">0.00~14.00</span></label>
+          <input type="number" id="entryPH" step="0.01" placeholder="7.00" />
+          <div class="error-msg" id="errEntryPH"></div>
+        </div>
+        <div class="form-group">
+          <label>ORP (mV) <span class="unit-hint">-1000~1000</span></label>
+          <input type="number" id="entryORP" step="0.01" placeholder="0" />
+          <div class="error-msg" id="errEntryORP"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>浊度 (NTU) <span class="unit-hint">0~1000</span></label>
+          <input type="number" id="entryNTU" step="0.01" placeholder="0" />
+          <div class="error-msg" id="errEntryNTU"></div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" id="entrySubmit">提交</button>
+        <button type="reset" class="btn btn-default">重置</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

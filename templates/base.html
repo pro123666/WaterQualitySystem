@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}水质监测{% endblock %}</title>
+  <!-- 使用官方 CDN，避免本地 static 里没有 jquery 文件导致 404 与 $ 未定义 -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen py-10">
+  {% block main %}{% endblock %}
+</body>
+</html>

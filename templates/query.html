@@ -1,0 +1,61 @@
+{% extends "water_quality.html" %}
+
+{% block page_content %}
+<!-- 页面4：数据查询 -->
+<div id="pageQuery" class="page active">
+  <div class="query-section collapsible">
+    <div class="query-header">
+      <span>查询条件</span>
+      <span id="queryToggle">▼ 收起</span>
+    </div>
+    <div class="query-body">
+      <div class="form-row">
+        <div class="form-group" style="flex: 0 0 180px;">
+          <label>监测点编号</label>
+          <input type="text" id="queryPoint" placeholder="可选" />
+        </div>
+        <div class="form-group" style="flex: 0 0 140px;">
+          <label>开始日期</label>
+          <input type="date" id="queryStart" />
+        </div>
+        <div class="form-group" style="flex: 0 0 140px;">
+          <label>结束日期</label>
+          <input type="date" id="queryEnd" />
+        </div>
+        <div class="form-group" style="flex: 0 0 100px;">
+          <label>逻辑关系</label>
+          <select id="queryLogic">
+            <option value="and">且</option>
+            <option value="or">或</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" id="queryIndicators"></div>
+      <div class="form-row">
+        <button class="btn btn-primary" id="queryBtn">查询</button>
+        <button class="btn btn-default" id="queryReset">重置</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom: 16px;">查询结果</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>监测点编号</th>
+            <th>日期</th>
+            <th>余氯</th>
+            <th>电导率</th>
+            <th>PH</th>
+            <th>ORP</th>
+            <th>浊度</th>
+          </tr>
+        </thead>
+        <tbody id="queryTableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="queryPagination"></div>
+  </div>
+</div>
+{% endblock %}
