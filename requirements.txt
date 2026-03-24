@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Mail
+PyMySQL
+gunicorn
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Mail
+mysqlclient
+gunicorn

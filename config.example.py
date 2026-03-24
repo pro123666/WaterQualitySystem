@@ -5,8 +5,11 @@ MYSQL_USER = "root"
 MYSQL_PASSWORD = "replace-with-your-db-password"
 MYSQL_PORT = 3306
 MYSQL_DB = "water_quality"
-SQLALCHEMY_DATABASE_URI = (
-    f"mysql+mysqldb://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
+# Prefer setting DATABASE_URL in cloud environments, e.g.:
+# mysql+pymysql://user:password@host:3306/dbname?charset=utf8mb4
+DATABASE_URL = ""
+SQLALCHEMY_DATABASE_URI = DATABASE_URL or (
+    f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
     "?charset=utf8mb4"
 )
 

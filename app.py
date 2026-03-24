@@ -1,9 +1,9 @@
 from datetime import datetime,timedelta
+import os
 from MySQLdb import IntegrityError
 from flask import Flask, render_template, request, jsonify, redirect, url_for, g,session
 import random
 import string
-import config
 from exts import migrate, db,mail
 from models import Quality, Date, User,EmailCode
 from flask_mail import Message
@@ -11,7 +11,36 @@ from decorators import login_required
 
 
 app = Flask(__name__)
-app.config.from_object(config)
+
+# Prefer environment-based config for cloud deployment; fall back to local config.py.
+try:
+    import config as local_config
+    app.config.from_object(local_config)
+except ModuleNotFoundError:
+    mysql_host = os.getenv("MYSQL_HOST", "localhost")
+    mysql_user = os.getenv("MYSQL_USER", "root")
+    mysql_password = os.getenv("MYSQL_PASSWORD", "")
+    mysql_port = os.getenv("MYSQL_PORT", "3306")
+    mysql_db = os.getenv("MYSQL_DB", "water_quality")
+
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        database_url = (
+            f"mysql+pymysql://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_db}"
+            "?charset=utf8mb4"
+        )
+
+    app.config.update(
+        SECRET_KEY=os.getenv("SECRET_KEY", "replace-with-a-strong-secret-key"),
+        SQLALCHEMY_DATABASE_URI=database_url,
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        MAIL_SERVER=os.getenv("MAIL_SERVER", "smtp.qq.com"),
+        MAIL_USE_SSL=os.getenv("MAIL_USE_SSL", "true").lower() == "true",
+        MAIL_PORT=int(os.getenv("MAIL_PORT", "465")),
+        MAIL_USERNAME=os.getenv("MAIL_USERNAME", ""),
+        MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),
+        MAIL_DEFAULT_SENDER=os.getenv("MAIL_DEFAULT_SENDER", os.getenv("MAIL_USERNAME", "")),
+    )
 db.init_app(app)
 migrate.init_app(app, db)
 mail.init_app(app)
