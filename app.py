@@ -1,6 +1,6 @@
 from datetime import datetime,timedelta
 import os
-from MySQLdb import IntegrityError
+from sqlalchemy.exc import IntegrityError
 from flask import Flask, render_template, request, jsonify, redirect, url_for, g,session
 import random
 import string
@@ -41,12 +41,24 @@ except ModuleNotFoundError:
         MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),
         MAIL_DEFAULT_SENDER=os.getenv("MAIL_DEFAULT_SENDER", os.getenv("MAIL_USERNAME", "")),
     )
+
+DISABLE_DB = os.getenv("DISABLE_DB", "false").lower() == "true"
+app.config["DISABLE_DB"] = DISABLE_DB
+if DISABLE_DB:
+    # Keep app bootable in demo mode without a live MySQL service.
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 db.init_app(app)
-migrate.init_app(app, db)
+if not DISABLE_DB:
+    migrate.init_app(app, db)
 mail.init_app(app)
 
 @app.before_request
 def before_request():
+    if app.config.get("DISABLE_DB"):
+        g.user = None
+        return
     user_id = session.get('user_id')
     if user_id:
         user = db.session.get(User,user_id)
@@ -81,8 +93,12 @@ def _quality_row_for_js(q: Quality) -> dict:
 
 @app.context_processor
 def context_processor():
-    quality_data = db.session.scalars(db.select(Quality)).all()
-    quality_rows = [_quality_row_for_js(q) for q in quality_data]
+    if app.config.get("DISABLE_DB"):
+        quality_data = []
+        quality_rows = []
+    else:
+        quality_data = db.session.scalars(db.select(Quality)).all()
+        quality_rows = [_quality_row_for_js(q) for q in quality_data]
     return {
         'user': g.user,
         "quality_data": quality_data,
@@ -100,6 +116,8 @@ def register():
     if request.method == 'GET':
         return render_template("register.html")
     else:
+        if app.config.get("DISABLE_DB"):
+            return jsonify({"result": False, "message": "演示模式未连接数据库，暂不支持注册。"})
         email = request.form.get("email")
         username = request.form.get("username")
         password = request.form.get("password")
@@ -125,6 +143,8 @@ def register():
         return jsonify({"result":True,"message":None})
 @app.get('/email/code')
 def get_email_code():
+    if app.config.get("DISABLE_DB"):
+        return jsonify({"result": False, "message": "演示模式未连接数据库，暂不支持发送验证码。"})
     email = request.args.get('email')
     if not email:
         return jsonify({"result":False,"message":"请传入邮箱!"})
@@ -156,6 +176,8 @@ def login():
     if request.method == 'GET':
         return render_template("login.html")
     else:
+        if app.config.get("DISABLE_DB"):
+            return redirect('/login')
         email = request.form.get("email")
         password = request.form.get("password")
         remember = request.form.get("remember")
@@ -214,6 +236,8 @@ def get_entry_point():
 
 @app.post("/api/records")
 def create_record():
+    if app.config.get("DISABLE_DB"):
+        return jsonify({"ok": False, "message": "演示模式未连接数据库，暂不支持写入数据。"})
     data = request.get_json(silent=True) or {}
 
     point_id = (data.get("point_id") or "").strip()
@@ -251,6 +275,8 @@ def edit():
     if request.method == "GET":
         return render_template('edit.html')
     else:
+        if app.config.get("DISABLE_DB"):
+            return redirect("/edit")
         date = request.form.get("date")
         date=date[0:10]
         dt = datetime.strptime(date, "%Y-%m-%d")
@@ -277,6 +303,8 @@ def delete():
     if request.method == "GET":
         return render_template('delete.html')
     else:
+        if app.config.get("DISABLE_DB"):
+            return redirect("/delete")
         date = request.form.get("date")
         date=date[0:10]
         dt = datetime.strptime(date, "%Y-%m-%d")
